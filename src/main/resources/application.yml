@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    initialization-mode: always
+    sql-script-encoding: UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/restapi_product_db
+    username: root
+    schema: classpath:schema.sql
+  jpa:
+    database: MYSQL
+    hibernate:
+      ddl-auto: none
