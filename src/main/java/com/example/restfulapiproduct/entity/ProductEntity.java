@@ -4,34 +4,27 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * ProductのEntityクラス
- */
+/** ProductのEntityクラス */
 @Entity
 @Data
+@Table(name = "product")
 public class ProductEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    private String title;
-    
-    private String description;
+  private String title;
 
-    private int price;
+  private String description;
 
-    private String imagePath;
+  private int price;
 
-    @CreationTimestamp
-    private LocalDateTime createTime;
+  private String imagePath;
 
-    @UpdateTimestamp
-    private LocalDateTime updateTime;
+  @CreationTimestamp private LocalDateTime createdAt;
 
+  @UpdateTimestamp private LocalDateTime updatedAt;
 }
