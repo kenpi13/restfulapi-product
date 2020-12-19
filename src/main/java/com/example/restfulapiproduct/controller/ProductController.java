@@ -6,9 +6,11 @@ import com.example.restfulapiproduct.form.ProductForm;
 import com.example.restfulapiproduct.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -77,5 +79,25 @@ public class ProductController {
   @DeleteMapping("/{id}")
   public void deleteProduct(@PathVariable(value = "id") Long id) {
     productService.deleteProduct(id);
+  }
+
+  @GetMapping("/{id}/images/{productImage}")
+  public HttpEntity<byte[]> getImage(
+      @PathVariable(value = "id") Long id, @PathVariable(value = "productImage") String imagePath) {
+    return productService.getImage(id, imagePath);
+  }
+
+  /**
+   * 商品画像更新
+   *
+   * @param id
+   * @param multipartFile
+   * @return
+   */
+  @PatchMapping("/{id}/images")
+  public ResponseEntity<ProductDto> updateImage(
+      @PathVariable(value = "id") Long id,
+      @RequestParam(value = "productImage") MultipartFile multipartFile) {
+    return new ResponseEntity<>(productService.updateImage(id, multipartFile), HttpStatus.OK);
   }
 }

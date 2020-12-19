@@ -10,3 +10,11 @@ spring:
     database: MYSQL
     hibernate:
       ddl-auto: update
+setting:
+  image:
+    imageStoreDir: "images/"
+    allowedContentTypes:
+      - .jpeg
+      - .jpg
+      - .png
+      - .gif
