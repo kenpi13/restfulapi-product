@@ -2,6 +2,7 @@ package com.example.restfulapiproduct.service;
 
 import com.example.restfulapiproduct.dto.ProductDto;
 import com.example.restfulapiproduct.entity.ProductEntity;
+import com.example.restfulapiproduct.exception.*;
 import com.example.restfulapiproduct.form.ProductForm;
 import com.example.restfulapiproduct.repository.ProductRepository;
 import com.example.restfulapiproduct.setting.ImageSetting;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
@@ -40,6 +42,9 @@ public class ProductService {
    * @return
    */
   public ProductEntity saveProduct(ProductForm productForm) {
+    if (isDuplicateTitle(productForm)) {
+      throw new ProductAlreadyExistException("すでに" + productForm.getTitle() + "の商品名は存在しています");
+    }
     ProductEntity productEntity = new ProductEntity();
     productEntity.setTitle(productForm.getTitle());
     productEntity.setDescription(productForm.getDescription());
@@ -50,13 +55,34 @@ public class ProductService {
   }
 
   /**
+   * 商品タイトル判定
+   *
+   * @param productForm
+   * @return
+   */
+  private boolean isDuplicateTitle(ProductForm productForm) {
+    return productRepository.findByTitleEquals(productForm.getTitle()).isPresent();
+  }
+
+  /**
+   * 商品タイトル更新判定
+   *
+   * @param productForm
+   * @param id
+   * @return
+   */
+  private boolean isDuplicateTitleIdNot(ProductForm productForm, Long id) {
+    return productRepository.findByTitleEqualsAndIdNot(productForm.getTitle(), id).isPresent();
+  }
+
+  /**
    * 商品検索
    *
    * @param id
    * @return
    */
   public ProductDto findProduct(Long id) {
-    ProductEntity productEntity = productRepository.findById(id).orElseThrow();
+    ProductEntity productEntity = findProductById(id);
     return convertToProductDto(productEntity);
   }
 
@@ -107,6 +133,9 @@ public class ProductService {
    * @return
    */
   public ProductEntity update(Long id, ProductForm productForm) {
+    if (isDuplicateTitleIdNot(productForm, id)) {
+      throw new ProductAlreadyExistException("すでに" + productForm.getTitle() + "の商品は存在しています");
+    }
     ProductEntity productEntity = productRepository.findById(id).orElseThrow();
     productEntity.setTitle(productForm.getTitle());
     productEntity.setDescription(productForm.getDescription());
@@ -127,7 +156,7 @@ public class ProductService {
   public HttpEntity<byte[]> getImage(Long id, String imagePath) {
     ProductDto productDto = findProduct(id);
     if (productDto.getImagePath().isBlank()) {
-      System.out.println("else");
+      throw new ImageNotFoundException("画像が見つかりませんでした");
     }
     File file = new File(imageSetting.getImageStoreDir() + "image" + id + '/' + imagePath);
     Resource resource = resourceLoader.getResource("file:" + file.getAbsolutePath());
@@ -136,8 +165,8 @@ public class ProductService {
     try (InputStream inputStream = resource.getInputStream()) {
       contentType = URLConnection.guessContentTypeFromStream(inputStream);
       imageBytes = inputStream.readAllBytes();
-    } catch (Exception e) {
-      throw new RuntimeException();
+    } catch (IOException ex) {
+      throw new ImageNotUploadException("商品画像の取得に失敗しました");
     }
     String extension = FilenameUtils.getExtension(imagePath);
     HttpHeaders headers = imageService.inspectExtension(extension);
@@ -154,7 +183,7 @@ public class ProductService {
    */
   public ProductDto updateImage(Long id, MultipartFile multipartFile) {
     if (multipartFile == null) {
-      System.out.println();
+      throw new ImageNotFoundException("画像が登録されていません");
     }
     String fileName = multipartFile.getOriginalFilename();
     String contentType = '.' + FilenameUtils.getExtension(fileName);
@@ -162,7 +191,7 @@ public class ProductService {
     System.out.println(allowExtensions);
     String allowExtensionRegex = String.join("|", allowExtensions);
     if (contentType.equalsIgnoreCase(allowExtensionRegex)) {
-      System.out.println("exception");
+      throw new UnsupportedMediaTypeException(allowExtensions + "以外の拡張子は使用できません");
     }
     ProductEntity productEntity = findProductById(id);
     if (StringUtils.isNotBlank(productEntity.getImagePath())) {
@@ -174,7 +203,10 @@ public class ProductService {
   }
 
   public ProductEntity findProductById(Long id) {
-    ProductEntity productEntity = productRepository.findById(id).orElseThrow();
+    ProductEntity productEntity =
+        productRepository
+            .findById(id)
+            .orElseThrow(() -> new ProductNotFoundException("IDが" + id + "の商品はありませんでした"));
     return productEntity;
   }
 

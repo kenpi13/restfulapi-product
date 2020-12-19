@@ -12,11 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * 画像サービス
- *
- * @author kawaharakenta
- */
+/** 画像サービス */
 @Service
 @RequiredArgsConstructor
 public class ImageService {
